@@ -2,6 +2,8 @@
 # (1) all the three basic online algorithms for the problem of energy minimization via speed scaling
 # (2) an implementation of the offline optimal algorithm
 # (3) the implementation of LAS algorithm
+from fractions import Fraction
+from typing import Dict, Any, Tuple, Union
 
 from scheduling_functions import *
 import numpy as np
@@ -11,6 +13,128 @@ from random import sample, randint, seed
 from math import isclose, ceil, floor
 from decimal import *
 from fractions import *
+
+
+
+
+
+def Conv_Alg(J_prediction, J_true, epsilon, dt):
+
+    # we calculate the lenght of every job
+    w, r, d = _J_prediction[1]
+    T = d - r
+    #now we will proceed to calculate:
+    #                   (1) the optimal speed scheduling for J_pred
+    #                   (2) the slightly faster schedule where each job is speeded up by a factor of 1/(1 - epsilon)
+    T_prime = (1 - epsilon) * T
+
+    J_prediction_sol = Optimal_Alg(J_prediction)
+
+    #create a speeded up solution of J_prediction_opt
+    ids = J_prediction_sol.keys()
+    for id in ids:
+        w, speed, start, end = J_prediction_sol[id]
+        new_speed = Fraction(speed, 1- epsilon)
+        # we need to have new_end - start = (end-start)/(1-epsilon)
+        new_end = start + Fraction(end-start, 1-epsilon)
+        new_end = end
+        del J_prediction_sol[id]
+        J_prediction_sol[id] = (w, new_speed, start, new_end)
+    s_pred = compute_speed(J_prediction_sol)
+    # s_pred is a dictionary of the form (t1, t2) --> speed in this interval
+
+    #waterfilling
+    ids = J_true.keys()
+    speed_sol = []
+    #compute the start of time
+    _, t, _ = J_true[ids[0]]
+    for id in ids:
+        w_id, start_id, _ = J_true[id]
+        t1 = float(start_id) + float(T_prime)
+        # intialization
+        work_remaining = w_id
+        while t<=t1 and work_remaining > 0:
+            speed_t = get_speed(s_pred, t)
+            speed_sol.append(speed_t)
+            work_done = speed_t * dt
+            work_remaining -= work_done
+            t += dt
+        # now we check if there is work that needs to be done
+        #if there is we just add it to the last element of the calculated solution
+        if work_remaining > 0:
+            speed_sol[-1] += work_remaining
+    return speed_sol
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        # we first need to change the instance by doing the epsilon bucketing
+        # we need to do the epsilon bucketing only when 1/epsilon is smaller than T
+        # we extend our algorithm to values of epsilon > 1/3. In this case we do not do the bucketing at all
+
+        w, r, d = _J_prediction[1]
+        T = d - r
+        if epsilon * T > 1 and epsilon < Fraction(1, 3):
+            J_prediction = rounding_instance(_J_prediction, epsilon)
+            J_true = rounding_instance(_J_true, epsilon)
+        else:
+            J_prediction = _J_prediction
+            J_true = _J_true
+
+        # we will do the capping with the epsilon**2
+
+        # Optimal_Alg returns a speed list and the a solution instance
+        _, J_prediction_opt = Optimal_Alg(J_prediction)
+
+        # we will only need from now on the speed list solution in a dictionary form
+
+        speed_guideline = compute_speed(J_prediction_opt)
+
+        # we will proceed by doing the smoothing of the speed_guideline
+        # which was initialized to be the optimal solution of the J_prediction
+
+        ids = sorted(J_prediction_opt.keys())
+        for id in ids:
+            w_id, speed_id, start_processing, end_processing = J_prediction_opt[id]
+            _, r, d = J_prediction[id]
+            cappped_speed = Fraction(w_id, (d - r) * epsilon ** 2)
 
 
 def BKP_alg(J, dt, alpha):
@@ -173,57 +297,87 @@ def Alg_with_Predictions(_J_prediction, _J_true, epsilon):
     else:
         J_prediction = _J_prediction
         J_true = _J_true
-    # we will do the capping with the epsilon**2
-    speed_list_optimal, J_prediction_opt = Optimal_Alg(J_prediction)
 
-    # now we will do the capping of the speed and we will change the weight of the jon appropriately
-    # that means:
-    #           if s[id] > w_id / ((d-r)*epsilon**2) where r= arrival time and d = deadline
-    #               then: s[id] --> w_id/((d-r)*epsilon**2)
-    #                     w_id --> s[id]*(end_processing - start_processing)
+    # we will do the capping with the epsilon**2
+
+    #Optimal_Alg returns a speed list and the a solution instance
+    _, J_prediction_opt = Optimal_Alg(J_prediction)
+
+    #we will only need from now on the speed list solution in a dictionary form
+
+    speed_guideline = compute_speed(J_prediction_opt)
+
+    # we will proceed by doing the smoothing of the speed_guideline
+    # which was initialized to be the optimal solution of the J_prediction
+
     ids = sorted(J_prediction_opt.keys())
     for id in ids:
         w_id, speed_id, start_processing, end_processing = J_prediction_opt[id]
         _, r, d = J_prediction[id]
-        average_speed = Fraction(w_id, d - r)
-        if speed_id > Fraction(average_speed, epsilon ** 2):
+        cappped_speed = Fraction(w_id, (d - r)*epsilon**2)
+
+        if speed_id > cappped_speed:
             # cap the speed
-            speed_id = Fraction(average_speed, epsilon ** 2)
-            # update the weight for which we are solving the instance
-            w_id = speed_id * (end_processing - start_processing)
-            del J_prediction_opt[id]
-            J_prediction_opt[id] = (w_id, speed_id, start_processing, end_processing)
-    # now we compute the capped speed list
-    speed_list_dictionary = compute_speed(J_prediction_opt)
+            interval = (start_processing, end_processing)
+            add_speed(speed_guideline, cappped_speed - speed_id, interval)
+
+            # compute how much work we should smear out
+            w_cap = (speed_id - cappped_speed)*(end_processing - start_processing)
+            smear_out_speed = Fraction(w_cap, d-r)
+            interval = (r,d)
+            add_speed(speed_guideline, smear_out_speed, interval)
+
 
     # from now on, we simulate how the online algorithm with predictions adjust to misspredictions:
     for id in ids:
         w_true, _r_true, _d_true = J_true[id]
-        w_online, speed_online, start_processing, end_processing = J_prediction_opt[id]
+        w_online, speed_online, _start_processing, _end_processing = J_prediction_opt[id]
+
+        #be sure that times are of Fraction type
         r_true = Fraction(_r_true, 1)
         d_true = Fraction(_d_true, 1)
-        # if we overpredicted then we scale down the speed in the processing interval of the optimal solution of the predicted instance
-        if w_true <= w_online:
-            work_to_remove = w_online - w_true
-            try:
-                speed_to_remove = Fraction(work_to_remove, end_processing - start_processing)
-            except ZeroDivisionError as err:
-                print("I have azero division", err)
-                print("we are talking about job =", id)
-                print("start processing", start_processing)
-                print("end processing", end_processing)
-                print("speed to remove", speed_to_remove)
-                print("the true weight of this job is:", w_true)
-            interval = (start_processing, end_processing)
-            add_speed(speed_list_dictionary, -speed_to_remove, interval)
+        start_processing = Fraction(_start_processing,1)
+        end_processing = Fraction(_end_processing, 1)
+
+        # we precompute the two intervals in which we may change the speed
+        whole_interval = (r_true, d_true)
+        processing_interval = (start_processing, end_processing)
+
+        # we precompute the lenght T(same of every job) and T_proc which is the lenght of the interval
+        # in which the job is processed in the optimal speed schedule for the prediction
+        T = d_true - r_true
+        T_proc = end_processing-start_processing
+        too_high = (T_proc < T*epsilon**2)
+
+        # if we overpredicted then we scale down the speed by a factor w_true/w_online
+        # since the scale down of the speed is referred to the parallel execution of the
+        # job setting, we should be careful how we do this scaling (here we update the cumulative speed)
+
+
+
+
+        if w_true < w_online and too_high:
+            alpha_tilde = 1 - Fraction(T_proc, T * epsilon**2)
+            alpha = Fraction(1, epsilon**2) + alpha_tilde
+
+            #first we add speed to the whole interval
+            speed_to_add = Fraction(w_true - w_online, T)*alpha_tilde
+            add_speed(speed_guideline, speed_to_add, whole_interval)
+
+            #we subsequently add speed to the processing interval
+            speed_to_add = Fraction(w_true - w_online, T) * Fraction(1,epsilon**2)
+            add_speed(speed_guideline, speed_to_add, processing_interval)
+
+        elif w_true < w_online and (not too_high):
+
+            #we add speed only in the processing interval since the capping did not happen
+            speed_to_add = Fraction(w_true - w_online, T_proc)
+            add_speed(speed_guideline, speed_to_add, processing_interval)
         else:
             # this is the case we underestimate, or we capped the job...
             # no matter the reason we need to augment the speed in order to produce a feasible solution
-            w_to_add = w_true - w_online
-
-            speed_to_add = Fraction(w_to_add, d_true - r_true)
-            interval = (r_true, d_true)
-            add_speed(speed_list_dictionary, speed_to_add, interval)
+            speed_to_add = Fraction(w_true - w_online, T)
+            add_speed(speed_guideline, speed_to_add, whole_interval)
         # now the speed list stores the speed dictionary
         # which is finally ran by the online+prediction algorithm
-    return speed_list_dictionary
+    return speed_guideline
