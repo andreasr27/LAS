@@ -96,6 +96,18 @@ def compute_energy(speed_list, alpha):
     energy = sum([  (interval[1]-interval[0])*(speed_list[interval])**alpha  for interval in speed_list.keys() ])
     return energy
 
+
+def get_speed(speed_dictionary, t):
+    speed = 0
+    intervals = speed_dictionary.keys()
+    for interval in intervals:
+        start, end = interval
+        if (t>=start) and (t<=end):
+            speed = speed_dictionary[interval]
+            break
+    return speed
+
+
 def compute_speed(J_sol):
     # input: solution instance --> dictionary key --> id
     #                                        value--> (weight, speed, start processing, end processing)
@@ -207,6 +219,44 @@ def add_speed(speed_list, speed, interval):
             print("start of update = ", start_of_update, "---", "end of update = ", end_of_update)
             print("start = ", start, "---", "end = ", end)
             exit(-1)
+
+
+
+def scale_speed(speed_list, mul_factor, interval):
+    # input: (1) speed_list is a dictionary with key --> interval as a tuple (start,end)
+    #                                       value--> speed at this particular interval
+    #        (2) speed: the amount of speed that we want to add
+    #        (3) interval: the interval in which we want to increase the speed
+    # output: update the speed list dictionary to add the speed in the appropriate interval
+
+    start_of_update = interval[0]
+    end_of_update   = interval[1]
+    # we first get all the intersecting intervals
+    intersecting_intervals_list = intersecting_intervals(speed_list, interval)
+
+    # now we have to modify the speed list dictionary in order to add the new interval
+    modify_speedlist(speed_list, intersecting_intervals_list, interval)
+
+    # after modify speed_list it must be the case that all intervals in the speed_list are either contained in the interval that we want to update or are completely disjoint
+    speed_list_keys = sorted(speed_list.keys(), key=lambda x: x[0])
+    for interval_to_update in speed_list_keys:
+        start = interval_to_update[0]
+        end  = interval_to_update[1]
+        if start_of_update <= start and end <= end_of_update:
+            #here we need to do the update
+            speed_to_increase = speed_list[interval_to_update]
+            del speed_list[interval_to_update]
+            new_speed = speed_to_increase * mul_factor
+            speed_list[interval_to_update] = new_speed
+        elif end_of_update <= start or start_of_update >= end:
+            #that means I do not need to do something
+            continue
+        else:
+            print("I have a problem")
+            print("start of update = ", start_of_update, "---", "end of update = ", end_of_update)
+            print("start = ", start, "---", "end = ", end)
+            exit(-1)
+
 
 
 def rounding_instance(J, epsilon):
