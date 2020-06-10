@@ -225,7 +225,7 @@ def add_speed(speed_list, speed, interval):
 def scale_speed(speed_list, mul_factor, interval):
     # input: (1) speed_list is a dictionary with key --> interval as a tuple (start,end)
     #                                       value--> speed at this particular interval
-    #        (2) speed: the amount of speed that we want to add
+    #        (2) mul_factor is a number that we want to multilply the speed with 
     #        (3) interval: the interval in which we want to increase the speed
     # output: update the speed list dictionary to add the speed in the appropriate interval
 
@@ -530,3 +530,81 @@ def densest_interval_BKP(J, t, dt):
             max_density=density
         time_arg+=dt
     return max_density
+
+
+
+
+
+
+def robustify(speed_to_make_robust, epsilon, T, dt):
+    # input: (1) speed_to_make_robust is the speed list we want to robustify
+    #        (2) epsilon is the robustness parameter
+    #        (3) T is the uniform deadline in our instances
+    #        (4) dt is the granularity of our output
+    # output: speed which is the output speed list that is actually ran by our algorithm
+    
+    dim = int(float(epsilon*T)/float(dt)) +1
+    mask_val = 1.0/float(dim)
+    mask = [mask_val]*dim
+    lenght_of_the_solution = len(speed_to_make_robust)
+    speed_to_make_robust = np.array(speed_to_make_robust)
+    mask = np.array(mask)
+    speed = np.convolve(mask, speed_to_make_robust)
+    
+    return speed
+
+
+
+
+def scale_down_epsilon(epsilon, alpha , error):
+    # input: epsilon that we wish to have (1+epsilon) consistency
+    #        alpha is the convexity parameter of the problem
+    #        error is how
+    
+    
+    # since we want our algorithm to be (1+epsilon) consistent
+    # we need ((1+new_epsilon)/(1-new_epsilon) )**alpha = (1 + epsilon)
+    search_granularity = 1000000
+    epsilons = np.linspace(0,0.9,search_granularity)
+    for new_epsilon in epsilons:
+        diff = ((1+ new_epsilon)/ (1 - new_epsilon) )**alpha - (1+epsilon)
+        if abs(diff) < error:
+            break
+    new_epsilon = Fraction.from_float(new_epsilon).limit_denominator()
+    return new_epsilon
+
+
+
+
+def speed_dictionary_to_list(speed_dict, dt, mul_factor):
+    # input: speed_dict which is the speed function in a dictionary form
+    #        dt which is teh desired granularity of the output list
+    #        mul_factor is used if we want to multiply every speed by a multiplicative factor
+    # output: s which is the speed in a list form
+    
+    
+    intervals = list(speed_dict.keys())
+    intervals.sort(key=lambda x: x[1])
+    
+    # multiply with mul_factor the speed at any moment if needed
+    for interval in intervals:        
+        old_speed = speed_dict[interval]
+        new_speed = old_speed*mul_factor
+        del speed_dict[interval]
+        speed_dict[interval] = new_speed
+        
+    #now we will turn the dictionary to a speed list with a granularity of dt
+    s = []
+    t = 0
+    for interval in intervals:
+        start, end = interval
+        speed = speed_dict[interval]
+        while t<end:
+            s.append(speed)
+            t+=dt
+    return s
+
+
+
+
+
