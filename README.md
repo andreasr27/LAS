@@ -4,8 +4,8 @@ The current folder contains the following files:
 - ``scheduling_algorithms.py``: Implementation of offline, online and learning augmented algorithms for the problem of energy minimization via speed scaling.
 - ``scheduling_functions.py``: A collection of functions used as subroutines by the scheduling algorithms in ``scheduling_algorithms.py``
 - ``Fast_Introduction.ipynb`` A jupyter notebook which presents a fast introduction on how to create and run experiments.
-- ``Artificial_Data_alltogether.ipynb``: A jupyter notebook  which reproduces the results of the Artificial datasets in section 5 of the paper.
-- ``Real_Data_alltogether.ipynb``: A jupyter notebook  which reproduces the results of the Real dataset in section 5 of the paper.
+- ``Artificial_Data_alltogether.ipynb``: A jupyter notebook  which reproduces the results of the Artificial datasets in section 4 of the paper.
+- ``Real_Data_alltogether.ipynb``: A jupyter notebook  which reproduces the results of the Real dataset in section 4 of the paper (the data preprocessing is described in the beginning of this notebook).
 
 
 # Prerequisites
