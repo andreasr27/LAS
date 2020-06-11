@@ -30,5 +30,10 @@ pip install -r requirements.txt
 ```
 
 # Results
-- Running all cells of the``Artificial_Data_alltogether.ipynb`` notebook reproduces the results of Table 1 in the paper.
-- Running all cells of the ``Real_Data_alltogether.ipynb`` notebook (it may take a while) stores the results in the file ``Real_Dataset_Results.db`` and (re)creates Figure 2 in the paper as ``final_real_plot.svg``.
+Running all cells of the``Artificial_Data_alltogether.ipynb`` notebook reproduces the results of Table 1 in the paper.
+
+![LAS table](LAS_artificial_data_table.png)
+
+Running all cells of the ``Real_Data_alltogether.ipynb`` notebook (it may take a while) stores the results in the file ``Real_Dataset_Results.db`` and (re)creates Figure 2 in the paper as ``final_real_plot.svg``.
+
+<img src="./final_real_plot.svg">
