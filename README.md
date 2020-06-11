@@ -6,6 +6,11 @@ The current folder contains the following files:
 - ``Fast_Introduction.ipynb`` A jupyter notebook which presents a fast introduction on how to create and run experiments.
 - ``Artificial_Data_alltogether.ipynb``: A jupyter notebook  which reproduces the results of the Artificial datasets in section 4 of the paper.
 - ``Real_Data_alltogether.ipynb``: A jupyter notebook  which reproduces the results of the Real dataset in section 4 of the paper (the data preprocessing is described in the beginning of this notebook).
+- ``final_real_plot.svg``: Figure 2 of the paper (The plot produced by ``Real_Data_alltogether.ipynb``)
+- ``LAS_artificial_data_table.png``: Table 1 of the paper (The results produced by ``Artificial_Data_alltogether.ipynb``)
+
+
+
 
 
 # Prerequisites
