@@ -1,6 +1,6 @@
 # Contents
 The current folder contains the following files:
-- ``loc-brightkite_totalCheckins.txt``: Brightkite time and location information of check-ins (<https://snap.stanford.edu/data/loc-Brightkite.html>). Each line contains **[user] [chek-in-time] [latitude] [longitude] [location id]**
+- ``loc-brightkite_totalCheckins.txt.zip``: Brightkite time and location information of check-ins (<https://snap.stanford.edu/data/loc-Brightkite.html>). Each line contains **[user] [chek-in-time] [latitude] [longitude] [location id]**
 - ``scheduling_algorithms.py``: Implementation of offline, online and learning augmented algorithms for the problem of energy minimization via speed scaling.
 - ``scheduling_functions.py``: A collection of functions used as subroutines by the scheduling algorithms in ``scheduling_algorithms.py``
 - ``Fast_Introduction.ipynb`` A jupyter notebook which presents a fast introduction on how to create and run experiments.
@@ -33,6 +33,14 @@ In order to install the rest of the requirements, please run:
 ```
 pip install -r requirements.txt
 ```
+
+Please unzip the dataset before runnign the notebooks:
+
+```
+unzip loc-brightkite_totalCheckins.txt.zip
+```
+
+
 
 # Results
 Running all cells of the``Artificial_Data_alltogether.ipynb`` notebook reproduces the results of Table 1 in the paper.
